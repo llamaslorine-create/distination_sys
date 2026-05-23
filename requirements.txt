@@ -1,0 +1,12 @@
+Flask==3.1.3
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.3.0
+bcrypt==5.0.0
+pymysql
+requests
+matplotlib>=3.10.0
+seaborn>=0.13.0
+pandas>=3.0.0
+werkzeug
+oss2>=2.19.1
