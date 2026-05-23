@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}编辑徽章 - 城市探店系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-edit"></i> 编辑徽章</h1>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label>徽章名称 *</label>
+                <input type="text" name="name" class="form-control" value="{{ badge.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea name="description" class="form-control" rows="3">{{ badge.description }}</textarea>
+            </div>
+            {% if badge.icon_url %}
+            <div class="form-group">
+                <label>当前图标</label>
+                <img src="{{ media_url(badge.icon_url, 'badge_icons') }}" class="img-thumbnail" style="width: 100px;">
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <label>更换图标</label>
+                <input type="file" name="icon" class="form-control-file">
+            </div>
+            <div class="form-group">
+                <label>获取条件类型</label>
+                <select name="condition_type" class="form-control">
+                    <option value="checkin_count" {% if badge.condition_type == 'checkin_count' %}selected{% endif %}>打卡次数</option>
+                    <option value="report_count" {% if badge.condition_type == 'report_count' %}selected{% endif %}>发布报告数</option>
+                    <option value="route_count" {% if badge.condition_type == 'route_count' %}selected{% endif %}>创建路线数</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>条件值 *</label>
+                <input type="number" name="condition_value" class="form-control" value="{{ badge.condition_value }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 更新</button>
+            <a href="{{ url_for('badge.list') }}" class="btn btn-default">取消</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

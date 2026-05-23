@@ -1,0 +1,86 @@
+{% if current_user.is_authenticated and hasattr(current_user, 'is_admin') and current_user.is_admin %}
+    {% extends 'base.html' %}
+{% else %}
+    {% extends 'user_base.html' %}
+{% endif %}
+{% block title %}发表博文 - 旅游博客{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row">
+        <div class="col-md-8">
+            <h1><i class="fas fa-pencil-alt"></i> 发表旅游博文</h1>
+        </div>
+        <div class="col-md-4 text-right" style="padding-top: 20px;">
+            <a href="{{ url_for('user.blog') }}" class="btn btn-default">
+                <i class="fas fa-arrow-left"></i> 返回博客
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-body" style="padding: 30px;">
+        <form method="post" action="{{ url_for('user.blog_add') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label for="author_name">您的昵称 *</label>
+                <input type="text" class="form-control" id="author_name" name="author_name" 
+                       placeholder="请输入您的昵称" required maxlength="50" 
+                       {% if current_user.is_authenticated %}value="{{ current_user.username }}"{% endif %}>
+            </div>
+            
+            <div class="form-group">
+                <label for="title">博文标题 *</label>
+                <input type="text" class="form-control" id="title" name="title" 
+                       placeholder="请输入博文标题" required maxlength="200">
+            </div>
+            
+            <div class="form-group">
+                <label for="content">博文内容 *</label>
+                <textarea class="form-control" id="content" name="content" 
+                          rows="12" placeholder="分享您的旅游故事..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="image">上传图片</label>
+                <input type="file" class="form-control" id="image" name="image" accept="image/*" style="height: auto;">
+                <p class="help-block">支持 PNG, JPG, JPEG, GIF, BMP, WebP 格式，单文件最大 5MB</p>
+            </div>
+            
+            <div class="form-group">
+                <div id="image-preview" style="display: none;">
+                    <img id="preview-img" src="#" alt="预览" style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; padding: 5px;"/>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-paper-plane"></i> 发表博文
+                </button>
+                <a href="{{ url_for('user.blog') }}" class="btn btn-default btn-lg">
+                    取消
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#image').change(function(e) {
+        var file = e.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#preview-img').attr('src', e.target.result);
+                $('#image-preview').show();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+</script>
+{% endblock %}

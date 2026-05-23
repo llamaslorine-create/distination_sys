@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}打卡点管理 - 城市探店系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-map-marker-alt"></i> 打卡点管理 <small>管理城市打卡点</small></h1>
+</div>
+
+<!-- 搜索和添加 -->
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form class="form-inline" method="get">
+            <input type="text" name="keyword" class="form-control mr-2" placeholder="搜索打卡点名称" value="{{ keyword }}">
+            <select name="category" class="form-control mr-2">
+                <option value="">全部分类</option>
+                {% for cat in category_list %}
+                <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> 搜索</button>
+        </form>
+    </div>
+    <div class="col-md-4 text-right">
+        <a href="{{ url_for('checkin.add') }}" class="btn btn-success"><i class="fas fa-plus"></i> 添加打卡点</a>
+        <a href="{{ url_for('checkin.stats') }}" class="btn btn-info"><i class="fas fa-chart-bar"></i> 数据统计</a>
+    </div>
+</div>
+
+<!-- 打卡点列表 -->
+<div class="panel panel-default">
+    <div class="panel-heading">打卡点列表</div>
+    <div class="panel-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>名称</th>
+                    <th>分类</th>
+                    <th>地址</th>
+                    <th>评分</th>
+                    <th>打卡次数</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for spot in spots %}
+                <tr>
+                    <td>{{ spot.spot_id }}</td>
+                    <td>{{ spot.name }}</td>
+                    <td>{{ spot.category }}</td>
+                    <td>{{ spot.address }}</td>
+                    <td>{{ spot.rating }}</td>
+                    <td>{{ spot.checkin_count }}</td>
+                    <td><span class="label {% if spot.status == 1 %}label-success{% else %}label-danger{% endif %}">
+                        {% if spot.status == 1 %}正常{% else %}禁用{% endif %}
+                    </span></td>
+                    <td>
+                        <a href="{{ url_for('checkin.edit', spot_id=spot.spot_id) }}" class="btn btn-xs btn-warning"><i class="fas fa-edit"></i> 编辑</a>
+                        <a href="{{ url_for('checkin.delete', spot_id=spot.spot_id) }}" class="btn btn-xs btn-danger" onclick="return confirm('确定删除？')"><i class="fas fa-trash"></i> 删除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination">
+                {% if pagination.has_prev %}
+                <li><a href="?page={{ pagination.prev_num }}">上一页</a></li>
+                {% endif %}
+                {% for page in pagination.iter_pages() %}
+                <li {% if page == pagination.page %}class="active"{% endif %}>
+                    <a href="?page={{ page }}">{{ page }}</a>
+                </li>
+                {% endfor %}
+                {% if pagination.has_next %}
+                <li><a href="?page={{ pagination.next_num }}">下一页</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

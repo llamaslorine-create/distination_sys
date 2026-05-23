@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}城市探店与打卡地图{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+    <style>
+        body { padding-top: 50px; background-color: #f8f9fa; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+        .sidebar {
+            position: fixed;
+            top: 51px;
+            bottom: 0;
+            left: 0;
+            z-index: 1000;
+            display: block;
+            padding: 20px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: #2c3e50;
+            border-right: 1px solid #eee;
+            width: 200px;
+        }
+        .nav-sidebar { margin-right: -21px; margin-bottom: 20px; margin-left: -20px; }
+        .nav-sidebar > li > a { color: #bdc3c7; padding-right: 20px; padding-left: 20px; }
+        .nav-sidebar > li > a:hover, .nav-sidebar > li > a:focus { color: #fff; background-color: #34495e; }
+        .nav-sidebar > .active > a, .nav-sidebar > .active > a:hover, .nav-sidebar > .active > a:focus {
+            color: #fff;
+            background-color: #3498db;
+        }
+        .nav-section {
+            color: #7f8c8d;
+            font-size: 10px;
+            text-transform: uppercase;
+            padding: 15px 20px 5px;
+            letter-spacing: 1px;
+        }
+        .main { padding: 20px; margin-left: 200px; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+        }
+        .page-header { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .panel { border: none; box-shadow: 0 1px 3px rgba(0,0,0,.1); border-radius: 4px; }
+        .panel-heading { font-weight: bold; background-color: #fff !important; border-bottom: 1px solid #f5f5f5 !important; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#"><i class="fas fa-map-marker-alt"></i> 城市探店系统</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#"><i class="fas fa-user-circle"></i> {{ current_user.admin_name if current_user.is_authenticated else '管理员' }}</a></li>
+                    <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> 退出登录</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-3 col-md-2 sidebar">
+                <ul class="nav nav-sidebar">
+                    <li class="nav-section">主菜单</li>
+                    <li class="{% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                        <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-tachometer-alt fa-fw"></i> 仪表盘</a>
+                    </li>
+                    
+                    <li class="nav-section">用户管理</li>
+                    <li class="{% if 'system.user' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('system.user_list') }}"><i class="fas fa-users fa-fw"></i> 用户列表</a>
+                    </li>
+
+                    <li class="nav-section">系统管理</li>
+                    <li class="{% if 'system.admin' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('system.admin_list') }}"><i class="fas fa-user-shield fa-fw"></i> 管理员管理</a>
+                    </li>
+                    <li class="{% if 'system.role' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('system.role_list') }}"><i class="fas fa-user-tag fa-fw"></i> 角色管理</a>
+                    </li>
+                    <li class="{% if 'system.log' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('system.log_list') }}"><i class="fas fa-clipboard-list fa-fw"></i> 系统日志</a>
+                    </li>
+
+                    <li class="nav-section">打卡地图</li>
+                    <li class="{% if 'map' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('map.explore') }}"><i class="fas fa-map fa-fw"></i> 地图探索</a>
+                    </li>
+                    <li class="{% if 'checkin' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('checkin.list') }}"><i class="fas fa-map-marker-alt fa-fw"></i> 打卡点管理</a>
+                    </li>
+                    <li class="{% if 'route' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('route.list') }}"><i class="fas fa-route fa-fw"></i> 打卡路线管理</a>
+                    </li>
+                    
+                    <li class="nav-section">社区互动</li>
+                    <li class="{% if 'blog' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('blog.index') }}"><i class="fas fa-blog"></i> 旅游博客</a>
+                    </li>
+                    <li class="nav-section">内容管理</li>
+                    <li class="{% if 'manage.announcements' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('manage.announcements') }}"><i class="fas fa-bullhorn"></i> 公告管理</a>
+                    </li>
+                    <li class="{% if 'manage.posts' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('manage.posts') }}"><i class="fas fa-file-alt"></i> 帖子管理</a>
+                    </li>
+                    <li class="{% if 'manage.comments' in request.endpoint %}active{% endif %}">
+                        <a href="{{ url_for('manage.comments') }}"><i class="fas fa-comments"></i> 评论管理</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible shadow-sm" role="alert">
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <i class="fas {{ 'fa-exclamation-circle' if category == 'error' else 'fa-check-circle' }} me-2"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.2.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

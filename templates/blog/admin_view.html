@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.title }} - 博客管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ post.title }}</h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('blog.index') }}" class="btn btn-secondary btn-sm">返回列表</a>
+                        <a href="{{ url_for('blog.edit', post_id=post.post_id) }}" class="btn btn-primary btn-sm">编辑</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="post-meta">
+                        <span class="text-muted">作者：{{ post.author_name }}</span>
+                        <span class="text-muted ml-3">创建时间：{{ post.create_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                        <span class="text-muted ml-3">浏览次数：{{ post.view_count }}</span>
+                        <span class="ml-3">状态：{% if post.status == 1 %}<span class="badge badge-success">已发布</span>{% else %}<span class="badge badge-warning">草稿</span>{% endif %}</span>
+                    </div>
+                    
+                    {% if post.image_url %}
+                    <div class="post-image mt-4">
+                        <img src="{{ post.image_url }}" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="post-content mt-4">
+                        {{ post.content|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

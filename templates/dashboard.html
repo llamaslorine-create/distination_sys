@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% block title %}仪表盘 - 城市探店与打卡地图{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card { padding: 20px; border-radius: 8px; color: #fff; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .stat-card .icon { position: absolute; right: 15px; top: 15px; font-size: 50px; opacity: 0.3; }
+    .stat-card .num { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
+    .stat-card .text { font-size: 14px; opacity: 0.9; }
+    .bg-blue { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .bg-green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    .bg-orange { background: linear-gradient(135deg, #e67e22, #d35400); }
+    .bg-purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+    .bg-red { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    .bg-cyan { background: linear-gradient(135deg, #1abc9c, #16a085); }
+    .chart-container { position: relative; height: 300px; }
+    .panel { border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .panel-heading { background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tachometer-alt"></i> 仪表盘 <small>系统概况与实时数据统计</small></h1>
+</div>
+
+<div class="row">
+    <div class="col-md-2 col-sm-4">
+        <div class="stat-card bg-blue">
+            <div class="icon"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="num">{{ spot_count | default(0) }}</div>
+            <div class="text">打卡点总数</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-4">
+        <div class="stat-card bg-green">
+            <div class="icon"><i class="fas fa-users"></i></div>
+            <div class="num">{{ user_count | default(0) }}</div>
+            <div class="text">注册用户</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-4">
+        <div class="stat-card bg-orange">
+            <div class="icon"><i class="fas fa-file-alt"></i></div>
+            <div class="num">{{ report_count | default(0) }}</div>
+            <div class="text">探店报告</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-4">
+        <div class="stat-card bg-purple">
+            <div class="icon"><i class="fas fa-route"></i></div>
+            <div class="num">{{ route_count | default(0) }}</div>
+            <div class="text">打卡路线</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-4">
+        <div class="stat-card bg-red">
+            <div class="icon"><i class="fas fa-blog"></i></div>
+            <div class="num">{{ post_count | default(0) }}</div>
+            <div class="text">论坛帖子</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-4">
+        <div class="stat-card bg-cyan">
+            <div class="icon"><i class="fas fa-comments"></i></div>
+            <div class="num">{{ comment_count | default(0) }}</div>
+            <div class="text">论坛评论</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-fire"></i> 热门打卡点（按打卡次数）</h3>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="hotSpotChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-star"></i> 好评打卡点（按评分）</h3>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="ratedSpotChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-trophy"></i> 综合推荐榜</h3>
+                <small style="color: #888; font-weight: normal;">（评分60%+热度40%）</small>
+            </div>
+            <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                {% for i in range(comprehensive_spot_names|length) %}
+                <div style="padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center;">
+                    <span style="background: linear-gradient(135deg, #f39c12, #e74c3c); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; font-size: 14px;">{{ loop.index }}</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: #333; margin-bottom: 4px;">{{ comprehensive_spot_names[i] }}</div>
+                        <div style="font-size: 12px; color: #888;">
+                            <i class="fas fa-star" style="color: #f39c12;"></i> {{ comprehensive_spot_scores[i] }} &nbsp;
+                            <i class="fas fa-users" style="color: #3498db;"></i> {{ comprehensive_spot_checkins[i] }}次打卡
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not comprehensive_spot_names %}
+                <div style="padding: 40px; text-align: center; color: #888;">暂无数据</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-chart-bar"></i> 打卡类别详细统计</h3>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="categoryDetailChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    Chart.defaults.font.family = "'Microsoft YaHei', 'PingFang SC', sans-serif";
+
+    const catCtx = document.getElementById('categoryChart');
+    if (catCtx) {
+        new Chart(catCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ category_labels | tojson | default('["咖啡馆","书店","小众景点","餐厅","文创店","美术馆"]') }},
+                datasets: [{
+                    data: {{ category_data | tojson | default('[5, 3, 8, 4, 2, 1]') }},
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.9)',
+                        'rgba(46, 204, 113, 0.9)',
+                        'rgba(230, 126, 34, 0.9)',
+                        'rgba(155, 89, 182, 0.9)',
+                        'rgba(231, 76, 60, 0.9)',
+                        'rgba(26, 188, 156, 0.9)',
+                        'rgba(52, 73, 94, 0.9)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { size: 12 } } }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    const hotSpotCtx = document.getElementById('hotSpotChart');
+    if (hotSpotCtx) {
+        new Chart(hotSpotCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {{ spot_names | tojson | default('["黄鹤楼","东湖绿道","楚河汉街","湖北省博物馆","昙华林"]') }},
+                datasets: [
+                    {
+                        label: '打卡次数',
+                        data: {{ spot_counts | tojson | default('[15678, 8234, 6341, 4156, 2892]') }},
+                        backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '评分',
+                        data: {{ spot_ratings | tojson | default('[4.5, 4.3, 4.2, 4.4, 4.1]') }},
+                        type: 'line',
+                        borderColor: 'rgba(230, 126, 34, 1)',
+                        backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(230, 126, 34, 1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: { size: 12 } } }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        position: 'left',
+                        title: { display: true, text: '打卡次数' }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        max: 5,
+                        grid: { display: false },
+                        position: 'right',
+                        title: { display: true, text: '评分' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    const ratedSpotCtx = document.getElementById('ratedSpotChart');
+    if (ratedSpotCtx) {
+        new Chart(ratedSpotCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {{ rated_spot_names | tojson | default('["黄鹤楼","昙华林","楚河汉街","湖北省博物馆","东湖绿道"]') }},
+                datasets: [
+                    {
+                        label: '评分',
+                        data: {{ rated_spot_scores | tojson | default('[4.8, 4.7, 4.6, 4.5, 4.4]') }},
+                        backgroundColor: 'rgba(243, 156, 18, 0.8)',
+                        borderColor: 'rgba(243, 156, 18, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        xAxisID: 'x'
+                    },
+                    {
+                        label: '打卡次数',
+                        data: {{ rated_spot_checkins | tojson | default('[15678, 2892, 6341, 4156, 8234]') }},
+                        type: 'line',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                        tension: 0.4,
+                        xAxisID: 'x1'
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: { size: 12 } } }
+                },
+                scales: {
+                    x: { 
+                        beginAtZero: true, 
+                        max: 5,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        position: 'bottom',
+                        title: { display: true, text: '评分' }
+                    },
+                    x1: {
+                        beginAtZero: true,
+                        max: 30000,
+                        grid: { display: false },
+                        position: 'top',
+                        title: { display: true, text: '打卡次数' },
+                        ticks: {
+                            callback: function(value) {
+                                return value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value;
+                            }
+                        }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    const catDetailCtx = document.getElementById('categoryDetailChart');
+    if (catDetailCtx) {
+        new Chart(catDetailCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {{ category_detail_labels | tojson | default('["咖啡馆","书店","小众景点","餐厅","文创店","美术馆"]') }},
+                datasets: [
+                    {
+                        label: '景点数量',
+                        data: {{ category_detail_counts | tojson | default('[5, 3, 8, 4, 2, 1]') }},
+                        backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '平均评分',
+                        data: {{ category_avg_ratings | tojson | default('[4.2, 4.5, 4.0, 4.3, 4.6, 4.4]') }},
+                        backgroundColor: 'rgba(243, 156, 18, 0.8)',
+                        borderColor: 'rgba(243, 156, 18, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '总打卡次数',
+                        data: {{ category_total_checkins | tojson | default('[5230, 2150, 8900, 4500, 1200, 890]') }},
+                        type: 'line',
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(155, 89, 182, 1)',
+                        tension: 0.4,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: { size: 12 } } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        title: { display: true, text: '景点数量' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        max: 5,
+                        position: 'right',
+                        title: { display: true, text: '平均评分' },
+                        grid: { display: false }
+                    },
+                    y2: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: { display: true, text: '总打卡次数' },
+                        grid: { display: false }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

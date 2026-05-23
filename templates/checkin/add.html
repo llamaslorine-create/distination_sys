@@ -1,0 +1,59 @@
+{% if current_user.is_authenticated and current_user.is_admin %}
+    {% extends 'base.html' %}
+{% else %}
+    {% extends 'user_base.html' %}
+{% endif %}
+{% block title %}添加打卡点{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-plus"></i> 添加打卡点</h1>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label>打卡点名称 *</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>地址</label>
+                <input type="text" name="address" class="form-control">
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label>纬度 *</label>
+                    <input type="text" name="latitude" class="form-control" required placeholder="如: 30.5928">
+                </div>
+                <div class="form-group col-md-6">
+                    <label>经度 *</label>
+                    <input type="text" name="longitude" class="form-control" required placeholder="如: 114.3055">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>分类 *</label>
+                <select name="category" class="form-control" required>
+                    <option value="咖啡馆">咖啡馆</option>
+                    <option value="书店">书店</option>
+                    <option value="小众景点">小众景点</option>
+                    <option value="餐厅">餐厅</option>
+                    <option value="文创店">文创店</option>
+                    <option value="美术馆">美术馆</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea name="description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>图片</label>
+                <input type="file" name="image" class="form-control-file">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 保存</button>
+            <a href="{{ url_for('user.checkin') }}" class="btn btn-default">取消</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

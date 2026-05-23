@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}打卡点统计 - 城市探店系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container { position: relative; height: 300px; }
+    .stat-card { padding: 20px; border-radius: 4px; color: #fff; margin-bottom: 20px; }
+    .stat-card .num { font-size: 30px; font-weight: bold; }
+    .bg-blue { background-color: #3498db; }
+    .bg-green { background-color: #27ae60; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-chart-bar"></i> 打卡点数据统计</h1>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="stat-card bg-blue">
+            <div class="num">{{ categories | length }}</div>
+            <div class="text">打卡点分类数量</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card bg-green">
+            <div class="num">{{ category_counts | sum }}</div>
+            <div class="text">打卡点总数</div>
+        </div>
+    </div>
+</div>
+
+<!-- 图表区域 -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">分类分布</div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">区域热度TOP10</div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="areaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">新点探索趋势（近12个月）</div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    Chart.defaults.font.family = "'Microsoft YaHei', 'PingFang SC', sans-serif";
+    
+    // 分类饼图
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'pie',
+        data: {
+            labels: {{ categories | tojson }},
+            datasets: [{
+                data: {{ category_counts | tojson }},
+                backgroundColor: ['#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#34495e']
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+    
+    // 区域热度柱状图
+    new Chart(document.getElementById('areaChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ areas | tojson }},
+            datasets: [{
+                label: '打卡点数量',
+                data: {{ area_counts | tojson }},
+                backgroundColor: 'rgba(52, 152, 219, 0.7)'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+    
+    // 趋势折线图
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: {{ months | tojson }},
+            datasets: [{
+                label: '新增打卡点',
+                data: {{ monthly_counts | tojson }},
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+{% endblock %}

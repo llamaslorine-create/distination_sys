@@ -1,0 +1,258 @@
+{% if current_user.is_authenticated and current_user.is_admin %}
+    {% extends 'base.html' %}
+{% else %}
+    {% extends 'user_base.html' %}
+{% endif %}
+
+{% block title %}图片库 - 城市探店系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .upload-area:hover, .upload-area.dragover {
+        border-color: #667eea;
+        background-color: #f8f9fa;
+    }
+    .upload-area i {
+        font-size: 48px;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    .image-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .image-item img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    .image-item:hover img {
+        transform: scale(1.1);
+    }
+    .image-item .overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.6);
+        padding: 10px;
+        color: white;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .image-item:hover .overlay {
+        opacity: 1;
+    }
+    .progress-bar {
+        height: 8px;
+        background: #eee;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    .progress-bar .progress {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transition: width 0.3s;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-images"></i> 图片库管理</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-upload"></i> 上传图片</h3>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>图片类型</label>
+                            <select id="content-type" class="form-control">
+                                <option value="general">通用</option>
+                                <option value="avatar">用户头像</option>
+                                <option value="spot">打卡点图片</option>
+                                <option value="report">探店报告图片</option>
+                                <option value="route">路线封面</option>
+                                <option value="blog">博客图片</option>
+                                <option value="announcement">公告图片</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="upload-area" class="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击或拖拽文件到此处上传</p>
+                    <p class="text-muted" style="font-size: 13px;">支持 PNG, JPG, JPEG, GIF, BMP, WebP 格式，单文件最大 5MB</p>
+                </div>
+                
+                <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+                
+                <div id="upload-progress" style="display: none; margin-top: 20px;">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-center text-muted" style="margin-top: 5px;"></p>
+                </div>
+                
+                <div id="upload-results" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-image"></i> 已上传图片</h3>
+            </div>
+            <div class="panel-body">
+                <div id="image-grid" class="image-grid">
+                    <div class="text-center text-muted col-xs-12">
+                        <i class="fas fa-image" style="font-size: 48px; color: #ddd; margin-bottom: 10px;"></i>
+                        <p>暂无图片</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    var uploadArea = $('#upload-area');
+    var fileInput = $('#file-input');
+    var progressBar = $('#upload-progress');
+    var progress = progressBar.find('.progress');
+    var progressText = $('#progress-text');
+    var uploadResults = $('#upload-results');
+    
+    uploadArea.click(function() {
+        fileInput.click();
+    });
+    
+    uploadArea.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('dragover');
+    });
+    
+    uploadArea.on('dragleave', function() {
+        $(this).removeClass('dragover');
+    });
+    
+    uploadArea.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+        var files = e.originalEvent.dataTransfer.files;
+        handleFiles(files);
+    });
+    
+    fileInput.change(function() {
+        var files = this.files;
+        handleFiles(files);
+    });
+    
+    function handleFiles(files) {
+        if (files.length === 0) return;
+        
+        progressBar.show();
+        progress.css('width', '0%');
+        uploadResults.html('');
+        
+        var content_type = $('#content-type').val();
+        var formData = new FormData();
+        formData.append('content_type', content_type);
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        
+        for (var i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+        
+        $.ajax({
+            url: '/gallery/batch_upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                var xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        var percent = Math.round((e.loaded / e.total) * 100);
+                        progress.css('width', percent + '%');
+                        progressText.text('上传中... ' + percent + '%');
+                    }
+                });
+                return xhr;
+            },
+            success: function(data) {
+                progressBar.hide();
+                
+                var html = '<div class="alert alert-' + (data.status === 'success' ? 'success' : 'danger') + '">';
+                html += '<strong>' + (data.status === 'success' ? '成功！' : '失败！') + '</strong> ' + data.message;
+                html += '</div>';
+                
+                if (data.results && data.results.length > 0) {
+                    html += '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>文件名</th><th>状态</th><th>操作</th></tr></thead><tbody>';
+                    data.results.forEach(function(result) {
+                        html += '<tr>';
+                        html += '<td>' + result.filename + '</td>';
+                        html += '<td><span class="label label-' + (result.status === 'success' ? 'success' : 'danger') + '">' + (result.status === 'success' ? '成功' : '失败') + '</span></td>';
+                        html += '<td>';
+                        if (result.status === 'success') {
+                            html += '<button class="btn btn-xs btn-success" onclick="copyUrl(\'' + result.url + '\')">复制链接</button>';
+                        } else {
+                            html += '<span class="text-muted">' + result.message + '</span>';
+                        }
+                        html += '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                }
+                
+                uploadResults.html(html);
+            },
+            error: function() {
+                progressBar.hide();
+                uploadResults.html('<div class="alert alert-danger">上传失败，请重试</div>');
+            }
+        });
+    }
+    
+    window.copyUrl = function(url) {
+        var tempInput = $('<input>');
+        $('body').append(tempInput);
+        tempInput.val(url).select();
+        document.execCommand('copy');
+        tempInput.remove();
+        alert('链接已复制到剪贴板');
+    };
+});
+</script>
+{% endblock %}

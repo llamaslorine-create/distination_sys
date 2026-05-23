@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}编辑打卡点 - 城市探店系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-edit"></i> 编辑打卡点</h1>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label>打卡点名称 *</label>
+                <input type="text" name="name" class="form-control" value="{{ spot.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>地址</label>
+                <input type="text" name="address" class="form-control" value="{{ spot.address }}">
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label>纬度 *</label>
+                    <input type="text" name="latitude" class="form-control" value="{{ spot.latitude }}" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label>经度 *</label>
+                    <input type="text" name="longitude" class="form-control" value="{{ spot.longitude }}" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>分类 *</label>
+                <select name="category" class="form-control" required>
+                    <option value="咖啡馆" {% if spot.category == '咖啡馆' %}selected{% endif %}>咖啡馆</option>
+                    <option value="书店" {% if spot.category == '书店' %}selected{% endif %}>书店</option>
+                    <option value="小众景点" {% if spot.category == '小众景点' %}selected{% endif %}>小众景点</option>
+                    <option value="餐厅" {% if spot.category == '餐厅' %}selected{% endif %}>餐厅</option>
+                    <option value="文创店" {% if spot.category == '文创店' %}selected{% endif %}>文创店</option>
+                    <option value="美术馆" {% if spot.category == '美术馆' %}selected{% endif %}>美术馆</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea name="description" class="form-control" rows="3">{{ spot.description }}</textarea>
+            </div>
+            {% if spot.image_url %}
+            <div class="form-group">
+                <label>当前图片</label>
+                <img src="{{ media_url(spot.image_url, 'spot_images') }}" class="img-thumbnail" style="max-width: 200px;">
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <label>更换图片</label>
+                <input type="file" name="image" class="form-control-file">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 更新</button>
+            <a href="{{ url_for('checkin.list') }}" class="btn btn-default">取消</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

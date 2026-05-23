@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}徽章管理 - 城市探店系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-award"></i> 徽章管理 <small>管理打卡徽章</small></h1>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12 text-right">
+        <a href="{{ url_for('badge.add') }}" class="btn btn-success"><i class="fas fa-plus"></i> 添加徽章</a>
+        <a href="{{ url_for('badge.user_badges') }}" class="btn btn-info"><i class="fas fa-users"></i> 用户徽章收集</a>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">徽章列表</div>
+    <div class="panel-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>名称</th>
+                    <th>图标</th>
+                    <th>获取条件</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for badge in badges %}
+                <tr>
+                    <td>{{ badge.badge_id }}</td>
+                    <td>{{ badge.name }}</td>
+                    <td>{% if badge.icon_url %}<img src="{{ media_url(badge.icon_url, 'badge_icons') }}" class="img-thumbnail" style="width: 50px;">{% endif %}</td>
+                    <td>{{ badge.condition_type }} >= {{ badge.condition_value }}</td>
+                    <td><span class="label {% if badge.status == 1 %}label-success{% else %}label-danger{% endif %}">
+                        {% if badge.status == 1 %}启用{% else %}禁用{% endif %}
+                    </span></td>
+                    <td>
+                        <a href="{{ url_for('badge.edit', badge_id=badge.badge_id) }}" class="btn btn-xs btn-warning"><i class="fas fa-edit"></i> 编辑</a>
+                        <a href="{{ url_for('badge.delete', badge_id=badge.badge_id) }}" class="btn btn-xs btn-danger" onclick="return confirm('确定删除？')"><i class="fas fa-trash"></i> 删除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination">
+                {% if pagination.has_prev %}
+                <li><a href="?page={{ pagination.prev_num }}">上一页</a></li>
+                {% endif %}
+                {% for page in pagination.iter_pages() %}
+                <li {% if page == pagination.page %}class="active"{% endif %}>
+                    <a href="?page={{ page }}">{{ page }}</a>
+                </li>
+                {% endfor %}
+                {% if pagination.has_next %}
+                <li><a href="?page={{ pagination.next_num }}">下一页</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

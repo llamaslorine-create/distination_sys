@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}用户徽章收集 - 城市探店系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-award"></i> 用户徽章收集</h1>
+</div>
+
+<div class="alert alert-info">
+    <strong>收集进度:</strong> {{ obtained_count }} / {{ total_count }}
+    <div class="progress" style="margin-top: 10px;">
+        <div class="progress-bar progress-bar-info" style="width: {{ (obtained_count / total_count * 100) if total_count > 0 else 0 }}%"></div>
+    </div>
+</div>
+
+<div class="row">
+    {% for badge in badges %}
+    <div class="col-md-3">
+        <div class="panel panel-default text-center">
+            <div class="panel-body">
+                {% if badge.icon_url %}
+                <img src="{{ media_url(badge.icon_url, 'badge_icons') }}" class="img-thumbnail" style="width: 100px; height: 100px;">
+                {% else %}
+                <div class="icon-circle" style="width: 100px; height: 100px; background-color: #eee; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-award" style="font-size: 40px;"></i>
+                </div>
+                {% endif %}
+                <h4>{{ badge.name }}</h4>
+                <p>{{ badge.description }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

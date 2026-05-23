@@ -1,0 +1,238 @@
+{% extends 'user_base.html' %}
+{% block title %}{{ post.title }} - 旅游博客{% endblock %}
+
+{% block extra_css %}
+<style>
+.post-header {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.post-header h1 {
+    color: white;
+    margin-bottom: 15px;
+}
+.post-meta {
+    opacity: 0.9;
+}
+.post-content {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #333;
+    padding: 20px 0;
+}
+.comment-section {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #eee;
+}
+.comment-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+.comment-item:last-child {
+    border-bottom: none;
+}
+.comment-author {
+    font-weight: bold;
+    color: #00acc1;
+}
+.comment-time {
+    color: #999;
+    font-size: 12px;
+    margin-left: 10px;
+}
+.comment-content {
+    margin-top: 8px;
+    color: #555;
+}
+.reply-btn {
+    font-size: 12px;
+    color: #00acc1;
+    cursor: pointer;
+}
+.reply-btn:hover {
+    text-decoration: underline;
+}
+.reply-form {
+    margin-top: 10px;
+    padding-left: 30px;
+    display: none;
+}
+.reply-form.active {
+    display: block;
+}
+.replies {
+    margin-left: 30px;
+    margin-top: 10px;
+    border-left: 2px solid #eee;
+    padding-left: 15px;
+}
+.reply-item {
+    padding: 10px 0;
+    border-bottom: 1px dashed #eee;
+}
+.sidebar-panel {
+    border: 2px solid #4db6ac;
+    border-radius: 8px;
+    background: #e8f5f5;
+}
+.sidebar-panel .panel-heading {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%) !important;
+    color: white;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 15px;
+}
+.sidebar-panel .panel-heading .panel-title {
+    font-size: 14px;
+}
+.sidebar-panel .panel-body {
+    padding: 12px 15px;
+    font-size: 13px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-9">
+        <div class="post-header">
+            <h1>{{ post.title }}</h1>
+            <div class="post-meta">
+                <i class="fas fa-user"></i> {{ post.author_name }} &nbsp;
+                <i class="fas fa-calendar"></i> {{ post.create_time.strftime('%Y-%m-%d %H:%M') }} &nbsp;
+                <i class="fas fa-eye"></i> {{ post.view_count }} 次浏览
+            </div>
+        </div>
+        
+        <div class="panel panel-default">
+            <div class="panel-body">
+                {% if post.image_url %}
+                <div style="margin-bottom: 20px;">
+                    <img src="{{ post.image_url }}" class="img-responsive" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 4px;">
+                </div>
+                {% endif %}
+                <div class="post-content">
+                    {{ post.content|replace('\n', '<br>')|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="comment-section">
+            <h3><i class="fas fa-comments"></i> 评论 ({{ post.comments|length }})</h3>
+            
+            <div class="panel panel-default" style="margin-top: 20px; margin-bottom: 30px;">
+                <div class="panel-body">
+                    <h4>发表评论</h4>
+                    <form method="post" action="{{ url_for('user.blog_comment', post_id=post.post_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="form-group">
+                            <input type="text" class="form-control" name="author_name" 
+                                   placeholder="您的昵称" required maxlength="50"
+                                   value="{{ current_user.username if current_user else '' }}">
+                        </div>
+                        <div class="form-group">
+                            <textarea class="form-control" name="content" rows="4" 
+                                      placeholder="写下您的评论..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> 发表评论
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            {% if post.comments %}
+                {% for comment in post.comments if not comment.parent_id %}
+                <div class="comment-item">
+                    <div>
+                        <span class="comment-author"><i class="fas fa-user-circle"></i> {{ comment.author_name }}</span>
+                        <span class="comment-time">
+                            <i class="fas fa-clock"></i> {{ comment.create_time.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                        <span class="reply-btn" onclick="toggleReply({{ comment.comment_id }})">
+                            <i class="fas fa-reply"></i> 回复
+                        </span>
+                    </div>
+                    <div class="comment-content">{{ comment.content|replace('\n', '<br>')|safe }}</div>
+                    
+                    <div class="reply-form" id="reply-form-{{ comment.comment_id }}">
+                        <form method="post" action="{{ url_for('user.blog_comment', post_id=post.post_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="parent_id" value="{{ comment.comment_id }}">
+                            <div class="form-group">
+                                <input type="text" class="form-control" name="author_name" 
+                                       placeholder="您的昵称" required maxlength="50"
+                                       value="{{ current_user.username if current_user else '' }}">
+                            </div>
+                            <div class="form-group">
+                                <textarea class="form-control" name="content" rows="2" 
+                                          placeholder="回复 {{ comment.author_name }}..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-reply"></i> 回复
+                            </button>
+                            <button type="button" class="btn btn-default btn-sm" onclick="toggleReply({{ comment.comment_id }})">
+                                取消
+                            </button>
+                        </form>
+                    </div>
+                    
+                    {% if comment.replies %}
+                    <div class="replies">
+                        {% for reply in comment.replies %}
+                        <div class="reply-item">
+                            <div>
+                                <span class="comment-author" style="font-size: 13px;"><i class="fas fa-user-circle"></i> {{ reply.author_name }}</span>
+                                <span class="comment-time">
+                                    <i class="fas fa-clock"></i> {{ reply.create_time.strftime('%Y-%m-%d %H:%M') }}
+                                </span>
+                            </div>
+                            <div class="comment-content" style="font-size: 14px;">{{ reply.content|replace('\n', '<br>')|safe }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted" style="padding: 40px;">
+                    <i class="fas fa-comments" style="font-size: 40px; margin-bottom: 15px;"></i>
+                    <p>还没有评论，快来抢沙发吧！</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="panel sidebar-panel">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fas fa-info-circle"></i> 博文信息</h3>
+            </div>
+            <div class="panel-body">
+                <p><strong>作者：</strong>{{ post.author_name }}</p>
+                <p><strong>发表时间：</strong>{{ post.create_time.strftime('%Y-%m-%d') }}</p>
+                <p><strong>浏览次数：</strong>{{ post.view_count }}</p>
+                <p><strong>评论数：</strong>{{ post.comments|length }}</p>
+            </div>
+        </div>
+        
+        <a href="{{ url_for('user.blog') }}" class="btn btn-default btn-block">
+            <i class="fas fa-arrow-left"></i> 返回博客
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleReply(commentId) {
+    var form = document.getElementById('reply-form-' + commentId);
+    if (form) {
+        form.classList.toggle('active');
+    }
+}
+</script>
+{% endblock %}
